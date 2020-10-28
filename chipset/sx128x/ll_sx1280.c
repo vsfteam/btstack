@@ -870,7 +870,8 @@ static void radio_on_rx_done(void ){
 
 static void radio_on_tx_timeout(void ){
     radio_state = RADIO_TX_TIMEOUT;
-    printf( "<>>>>>>>>TXE\n\r" ); 
+    printf( "<>>>>>>>>TXE\n\r" );
+    while (1);
 }
 
 static void radio_on_rx_timeout(void ){
