@@ -99,6 +99,15 @@ static uint16_t  rfcomm_mtu;
 static uint16_t  rfcomm_cid = 0;
 // static uint32_t  data_to_send =  DATA_VOLUME;
 
+// OOB
+static int ui_oob_confirm;
+static int ui_oob_random;
+static int ui_oob_pos;
+static int ui_oob_nibble;
+
+static uint8_t oob_peer_random[16];
+static uint8_t oob_peer_confirm[16];
+
 /**
  * RFCOMM can make use for ERTM. Due to the need to re-transmit packets,
  * a large buffer is needed to still get high throughput
@@ -230,7 +239,9 @@ static void handle_start_sdp_client_query(void * context){
     UNUSED(context);
     if (state != W2_SEND_SDP_QUERY) return;
     state = W4_RFCOMM_CHANNEL;
-    sdp_client_query_rfcomm_channel_and_name_for_uuid(&handle_query_rfcomm_event, peer_addr, BLUETOOTH_ATTRIBUTE_PUBLIC_BROWSE_ROOT);               
+    sdp_client_query_rfcomm_channel_and_name_for_uuid(&handle_query_rfcomm_event, peer_addr, BLUETOOTH_ATTRIBUTE_PUBLIC_BROWSE_ROOT);
+    // set OOB data
+    gap_ssp_remote_oob_data(peer_addr, oob_peer_confirm, oob_peer_random, NULL, NULL);
 }
 
 
@@ -253,7 +264,7 @@ static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *pack
 
                 case BTSTACK_EVENT_STATE:
                     if (btstack_event_state_get_state(packet) != HCI_STATE_WORKING) return;
-                    start_scan();
+                    printf("Please enter OOB with 'r' and 'c' commands\n");
                     break;
 
                 case GAP_EVENT_INQUIRY_RESULT:
@@ -268,7 +279,7 @@ static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *pack
                         printf("Device found: %s with COD: 0x%06x\n", bd_addr_to_str(event_addr), (int) class_of_device);
                     }                        
                     break;
-                    
+
                 case GAP_EVENT_INQUIRY_COMPLETE:
                     switch (state){
                         case W4_PEER_COD:                        
@@ -378,6 +389,64 @@ static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *pack
 	}
 }
 
+static void stdin_process(char c){
+
+    if (c == ' ') return;
+    if (c == ':') return;
+
+    if (ui_oob_confirm){
+        ui_oob_nibble = (ui_oob_nibble << 4) | nibble_for_char(c);
+        if ((ui_oob_pos & 1) == 1){
+            oob_peer_confirm[ui_oob_pos >> 1] = ui_oob_nibble;
+            ui_oob_nibble = 0;
+        }
+        ui_oob_pos++;
+        if (ui_oob_pos == 32){
+            ui_oob_confirm = 0;
+            printf("PEER_OOB_CONFIRM: ");
+            printf_hexdump(oob_peer_confirm, 16);
+            fflush(stdout);
+        }
+        return;
+    }
+
+    if (ui_oob_random){
+        ui_oob_nibble = (ui_oob_nibble << 4) | nibble_for_char(c);
+        if ((ui_oob_pos & 1) == 1){
+            oob_peer_random[ui_oob_pos >> 1] = ui_oob_nibble;
+            ui_oob_nibble = 0;
+        }
+        ui_oob_pos++;
+        if (ui_oob_pos == 32){
+            ui_oob_random = 0;
+            printf("PEER_OOB_RANDOM: ");
+            printf_hexdump(oob_peer_random, 16);
+            fflush(stdout);
+        }
+        return;
+    }
+
+    switch (c){
+        case 's':
+            printf("start scanning for spp streamer\n");
+            start_scan();
+            break;
+        case 'c':
+            printf("receive oob confirm value\n");
+            ui_oob_confirm = 1;
+            ui_oob_pos = 0;
+            break;
+        case 'r':
+            printf("receive oob random value\n");
+            ui_oob_random = 1;
+            ui_oob_pos = 0;
+            break;
+        default:
+            break;
+    }
+    fflush(stdout);
+}
+
 /*
  * @section Main Application Setup
  *
@@ -403,6 +472,8 @@ int btstack_main(int argc, const char * argv[]){
     // register for HCI events
     hci_event_callback_registration.callback = &packet_handler;
     hci_add_event_handler(&hci_event_callback_registration);
+
+    btstack_stdin_setup(stdin_process);
 
     // init SDP
     gap_ssp_set_io_capability(SSP_IO_CAPABILITY_DISPLAY_YES_NO);

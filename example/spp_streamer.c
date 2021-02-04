@@ -179,16 +179,44 @@ static void spp_send_packet(void){
  * 
  * @text The packet handler of the combined example is just the combination of the individual packet handlers.
  */
-
+static void print_16_bytes(const uint8_t * value){
+    unsigned  int i;
+    for (i=0;i<16;i++){
+        printf("%02X", value[i]);
+    }
+    printf("\n");
+}
 static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size){
     UNUSED(channel);
 
     bd_addr_t event_addr;
     uint8_t   rfcomm_channel_nr;
-
+    static bool read_local_oob = false;
 	switch (packet_type) {
 		case HCI_EVENT_PACKET:
 			switch (hci_event_packet_get_type(packet)) {
+
+                case BTSTACK_EVENT_STATE:
+                    if (btstack_event_state_get_state(packet) == HCI_STATE_WORKING){
+                        read_local_oob = true;
+                    }
+                    break;
+
+                case HCI_EVENT_COMMAND_COMPLETE:
+                    if (hci_event_command_complete_get_command_opcode(packet) == hci_read_local_oob_data.opcode){
+                        const uint8_t *return_params = hci_event_command_complete_get_return_parameters(packet);
+                        uint8_t status = return_params[0];
+                        if (status == ERROR_CODE_SUCCESS) {
+                            uint8_t value[16];
+                            reverse_128(&return_params[1], value);
+                            printf("C192: "); print_16_bytes(value);
+                            reverse_128(&return_params[17], value);
+                            printf("R192: "); print_16_bytes(value);
+                        } else {
+                            printf("Read OOB data failed, status 0x%02x\n", status);
+                        }
+                    }
+                    break;
 
                 case HCI_EVENT_PIN_CODE_REQUEST:
                     // inform about pin code request
@@ -267,6 +295,12 @@ static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *pack
         default:
             break;
 	}
+
+    // enable DUT mode when ready
+    if (read_local_oob && hci_can_send_command_packet_now()){
+        read_local_oob = false;
+        hci_send_cmd(&hci_read_local_oob_data);
+    }
 }
 
 /*
