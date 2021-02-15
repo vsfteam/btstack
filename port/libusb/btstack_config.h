@@ -11,6 +11,7 @@
 #define HAVE_MALLOC
 #define HAVE_POSIX_FILE_IO
 #define HAVE_POSIX_TIME
+#define HAVE_SCO_TRANSPORT
 
 // BTstack features that can be enabled
 #define ENABLE_ATT_DELAYED_RESPONSE
