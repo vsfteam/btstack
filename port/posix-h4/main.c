@@ -64,6 +64,7 @@
 #include "hci_dump.h"
 #include "btstack_stdin.h"
 #include "btstack_tlv_posix.h"
+#include "btstack_sco_transport_posix_i2s_test_bridge.h"
 
 #include "btstack_chipset_bcm.h"
 #include "btstack_chipset_csr.h"
@@ -265,6 +266,11 @@ int main(int argc, const char * argv[]){
 #ifdef HAVE_PORTAUDIO
     btstack_audio_sink_set_instance(btstack_audio_portaudio_sink_get_instance());
     btstack_audio_source_set_instance(btstack_audio_portaudio_source_get_instance());
+#endif
+
+#ifdef HAVE_SCO_TRANSPORT
+	const char * i2s_bridge_path = "/dev/tty.usbmodem0007755596211";
+	hci_set_sco_transport(btstack_sco_transport_posix_i2s_test_bridge_init_instance(i2s_bridge_path));
 #endif
 
     // set BD_ADDR for CSR without Flash/unique address

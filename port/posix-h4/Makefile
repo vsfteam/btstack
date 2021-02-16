@@ -13,6 +13,7 @@ CORE += \
 	btstack_run_loop_posix.c \
 	btstack_audio.c \
     btstack_audio_portaudio.c \
+    btstack_sco_transport_posix_i2s_test_bridge.c \
 	btstack_tlv_posix.c \
 	btstack_uart_block_posix.c \
 	hci_transport_h4.c \
