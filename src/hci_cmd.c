@@ -1387,6 +1387,21 @@ const hci_cmd_t hci_le_set_phy = {
 // LE PHY Update Complete is generated on completion
 };
 
+#else
+
+/**
+ * @param key ((128) for AES-128)
+ * @param plain_text (128) 
+ */
+const hci_cmd_t hci_le_encrypt = {
+    HCI_OPCODE_HCI_LE_ENCRYPT, "PP"
+    // return: status, encrypted data (128)
+};
+
+const hci_cmd_t hci_le_rand = {
+    HCI_OPCODE_HCI_LE_RAND, ""
+    // return: status, random number (64)
+};
 
 #endif
 
