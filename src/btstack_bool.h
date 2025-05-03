@@ -45,6 +45,10 @@
 
 #if !defined(__cplusplus)
 
+#ifdef __VSF__
+#   undef _MSC_VER
+#endif
+
 //
 // Check for C99
 // see: https://sourceforge.net/p/predef/wiki/Standards/

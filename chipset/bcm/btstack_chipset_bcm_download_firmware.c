@@ -44,6 +44,10 @@
 #include <string.h>
 #include <stdio.h>
 
+#ifdef __VSF__
+#   undef _MSC_VER
+#endif
+
 #ifdef _MSC_VER
 // map sleep() to Sleep()
 #include "Windows.h"
@@ -122,7 +126,9 @@ static void bcm_detect_controller(uint16_t manufacturer,
         printf("in btstack/chipset/bcm/btstack_chipset_bcm_download_firmware.c\n");
     } else {
         printf("Controller: %s\n", device_name);
+#ifdef HAVE_POSIX_FILE_IO
         btstack_chipset_bcm_set_device_name(device_name);
+#endif
     }
 }
 

@@ -60,6 +60,10 @@ extern "C" {
 #undef reverse_64
 #endif
 
+#ifdef __VSF__
+#	undef _MSC_VER
+#endif
+
 // use replacement in Visual Studio
 #ifdef _MSC_VER
 #define strncasecmp _strnicmp
