@@ -45,10 +45,6 @@
 
 #if !defined(__cplusplus)
 
-#ifdef __VSF__
-#   undef _MSC_VER
-#endif
-
 //
 // Check for C99
 // see: https://sourceforge.net/p/predef/wiki/Standards/
@@ -64,7 +60,9 @@
 // Detecting C99 in Visual Studio requires to disable Microsoft Extensions (/Za) which causes other issues
 // Workaround: if MSC, assume stdbool.h exists, which is true for Visual Studio 2022
 #ifdef _MSC_VER
-#define PREDEF_STANDARD_C_1999
+#   ifndef PREDEF_STANDARD_C_1999
+#       define PREDEF_STANDARD_C_1999
+#   endif
 #endif
 
 // define boolean type - required for MISRA-C 2012 Essential Type System
